@@ -57,4 +57,16 @@ export class HousingService {
       await this.counterModel.findOneAndUpdate(query, update, options).lean();
     return housingIdCounter.count;
   }
+
+  toTwoDigit(num: number): string {
+    return num < 10 ? `0${num}`: `${num}`;
+  }
+
+  getDateString(): string {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
+    const date = today.getDate();
+    return `${year}-${this.toTwoDigit(month)}-${this.toTwoDigit(date)}`;
+  }
 }

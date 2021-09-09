@@ -6,6 +6,7 @@ import { HousingModule } from './Housing/housing.module';
 import { UserModule } from './User/user.module';
 import { DemandModule } from './Demand/demand.module';
 import { RoommateModule } from './Roommate/roommate.module';
+import config from './config';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { RoommateModule } from './Roommate/roommate.module';
     UserModule,
     DemandModule,
     RoommateModule,
-    MongooseModule.forRoot('mongodb://localhost:27017/sdpt_housing')
+    MongooseModule.forRoot(config.MONGODB_URL)
   ],
   controllers: [AppController],
   providers: [AppService],

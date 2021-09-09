@@ -71,4 +71,8 @@ export class CreateHousingDto {
   @IsString()
   @MaxLength(100)
   message?: string;
+  @IsString({
+    each: true
+  })
+  images: string[];
 }
