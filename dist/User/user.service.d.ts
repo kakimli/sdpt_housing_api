@@ -8,7 +8,9 @@ export declare class UserService {
     private counterModel;
     private httpService;
     constructor(userModel: Model<UserDocument>, counterModel: Model<CounterDocument>, httpService: HttpService);
+    private readonly logger;
     requestForOpenId(loginDto: LoginDto): Promise<unknown>;
     createUserIfNotExist(openId: string, username: string): Promise<number>;
     findUser(userId: number): Promise<import("mongoose").LeanDocument<UserDocument>>;
+    incrementPostCount(userId: number): Promise<void>;
 }

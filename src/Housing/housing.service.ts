@@ -1,9 +1,8 @@
 import { Model } from 'mongoose';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Housing, HousingDocument } from './schemas/housing.schema';
 import { Counter, CounterDocument } from './schemas/counter.schema';
-import { CreateHousingDto } from './dto/create-housing.dto';
 import { SearchHousingDto } from './dto/search-housing.dto';
 
 @Injectable()
@@ -13,16 +12,23 @@ export class HousingService {
     @InjectModel(Counter.name) private counterModel: Model<CounterDocument>
   ) {}
 
+  private readonly logger = new Logger(HousingService.name);
+
   async create(params: any): Promise<Housing> {
+    this.logger.log(`Create post: postId ${params.postId} authorId ${params.authorId}`);
     const createdHousing = new this.housingModel(params);
     return createdHousing.save();
   }
 
-  async findAll(): Promise<Housing[]> {
-    return this.housingModel.find().exec();
+  async findAll(page: number, limit: number): Promise<Housing[]> {
+    this.logger.log(`Find all posts: page ${page} limit ${limit}`);
+    return this.housingModel.find()
+      .sort({ createdTime: -1 })
+      .skip(page * limit).limit(limit).exec();
   }
 
   async getPostById(postId: number): Promise<Housing> {
+    this.logger.log(`Get specific post: postId ${postId}`);
     const post = await this.housingModel.findOne({ postId });
     return post;
   }
@@ -41,7 +47,8 @@ export class HousingService {
     for (const otherName in shd.other) {
       if (shd.other[otherName] === 1) query[otherName] = 1;
     }
-    const posts = await this.housingModel.find(query);
+    this.logger.log(`Search posts: query ${JSON.stringify(query)}`)
+    const posts = await this.housingModel.find(query).sort({ createdTime: -1 });
     return posts;
   }
 

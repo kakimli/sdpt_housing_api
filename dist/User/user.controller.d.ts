@@ -3,6 +3,7 @@ import { UserService } from './user.service';
 export declare class UserController {
     private userService;
     constructor(userService: UserService);
+    private readonly logger;
     login(loginDto: LoginDto, session: Record<string, any>): Promise<number | {
         success: boolean;
         msg: any;

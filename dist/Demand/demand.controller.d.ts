@@ -6,7 +6,8 @@ export declare class DemandController {
     private demandService;
     private userService;
     constructor(demandService: DemandService, userService: UserService);
-    getAllPosts(): Promise<import("./schemas/demand.schema").Demand[]>;
+    private readonly logger;
+    getAllPosts(page: number, limit: number): Promise<import("./schemas/demand.schema").Demand[]>;
     searchPosts(searchDemandDto: SearchDemandDto): Promise<import("./schemas/demand.schema").DemandDocument[]>;
     getPostById(id: number): Promise<{
         success: boolean;

@@ -6,8 +6,9 @@ export declare class DemandService {
     private demandModel;
     private counterModel;
     constructor(demandModel: Model<DemandDocument>, counterModel: Model<CounterDocument>);
+    private readonly logger;
     create(params: any): Promise<Demand>;
-    findAll(): Promise<Demand[]>;
+    findAll(page: number, limit: number): Promise<Demand[]>;
     getPostById(postId: number): Promise<Demand>;
     searchPost(sdd: SearchDemandDto): Promise<DemandDocument[]>;
     getCountAndIncrement(): Promise<number>;

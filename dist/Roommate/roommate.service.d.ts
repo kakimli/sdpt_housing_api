@@ -6,8 +6,9 @@ export declare class RoommateService {
     private roommateModel;
     private counterModel;
     constructor(roommateModel: Model<RoommateDocument>, counterModel: Model<CounterDocument>);
+    private readonly logger;
     create(params: any): Promise<Roommate>;
-    findAll(): Promise<Roommate[]>;
+    findAll(page: any, limit: any): Promise<Roommate[]>;
     getPostById(postId: number): Promise<Roommate>;
     searchPost(sdd: SearchRoommateDto): Promise<RoommateDocument[]>;
     getCountAndIncrement(): Promise<number>;

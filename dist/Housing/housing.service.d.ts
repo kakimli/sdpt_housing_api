@@ -6,8 +6,9 @@ export declare class HousingService {
     private housingModel;
     private counterModel;
     constructor(housingModel: Model<HousingDocument>, counterModel: Model<CounterDocument>);
+    private readonly logger;
     create(params: any): Promise<Housing>;
-    findAll(): Promise<Housing[]>;
+    findAll(page: number, limit: number): Promise<Housing[]>;
     getPostById(postId: number): Promise<Housing>;
     searchPost(shd: SearchHousingDto): Promise<HousingDocument[]>;
     getCountAndIncrement(): Promise<number>;

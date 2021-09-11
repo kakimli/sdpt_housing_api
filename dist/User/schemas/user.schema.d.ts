@@ -4,5 +4,6 @@ export declare class User {
     userId: number;
     openId: string;
     username: string;
+    postCount: number;
 }
 export declare const UserSchema: import("mongoose").Schema<Document<User, any, any>, import("mongoose").Model<Document<User, any, any>, any, any>, {}>;

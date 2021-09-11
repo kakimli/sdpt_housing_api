@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var RoommateController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RoommateController = void 0;
 const common_1 = require("@nestjs/common");
@@ -19,13 +20,17 @@ const roommate_service_1 = require("./roommate.service");
 const common_2 = require("@nestjs/common");
 const search_roommate_dto_1 = require("./dto/search-roommate.dto");
 const user_service_1 = require("../User/user.service");
-let RoommateController = class RoommateController {
+const config_1 = require("../config");
+let RoommateController = RoommateController_1 = class RoommateController {
     constructor(roommateService, userService) {
         this.roommateService = roommateService;
         this.userService = userService;
+        this.logger = new common_1.Logger(RoommateController_1.name);
     }
-    async getAllPosts() {
-        const allPosts = await this.roommateService.findAll();
+    async getAllPosts(page, limit) {
+        page = page || 0;
+        limit = limit || 50;
+        const allPosts = await this.roommateService.findAll(page, limit);
         return allPosts;
     }
     async searchPosts(searchRoommateDto) {
@@ -44,6 +49,10 @@ let RoommateController = class RoommateController {
         const user = await this.userService.findUser(session.userId);
         if (!user)
             return { success: false, msg: 'user_not_exist' };
+        if (user.postCount >= config_1.default.maxPostCount) {
+            this.logger.log(`Create exceed max post count: userId ${user.userId}`);
+            return { success: false, msg: 'exceed_max_post_count' };
+        }
         const authorId = user.userId;
         const author = user.username;
         const postId = await this.roommateService.getCountAndIncrement();
@@ -61,13 +70,16 @@ let RoommateController = class RoommateController {
         };
         const params = Object.assign({}, createRoommateDto, otherParams);
         const post = await this.roommateService.create(params);
+        await this.userService.incrementPostCount(authorId);
         return { success: true, data: post };
     }
 };
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Param)('page')),
+    __param(1, (0, common_1.Param)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", Promise)
 ], RoommateController.prototype, "getAllPosts", null);
 __decorate([
@@ -94,7 +106,7 @@ __decorate([
     __metadata("design:paramtypes", [create_roommate_dto_1.CreateRoommateDto, Object]),
     __metadata("design:returntype", Promise)
 ], RoommateController.prototype, "createPost", null);
-RoommateController = __decorate([
+RoommateController = RoommateController_1 = __decorate([
     (0, common_1.Controller)('roommate'),
     __metadata("design:paramtypes", [roommate_service_1.RoommateService,
         user_service_1.UserService])

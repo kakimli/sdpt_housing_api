@@ -5,13 +5,15 @@ import {
   Param, 
   Post,
   UsePipes,
-  Session
+  Session,
+  Logger
 } from "@nestjs/common";
 import { CreateRoommateDto } from "./dto/create-roommate.dto";
 import { RoommateService } from "./roommate.service";
 import { ValidationPipe } from '@nestjs/common';
 import { SearchRoommateDto } from "./dto/search-roommate.dto";
 import { UserService } from "src/User/user.service";
+import config from "src/config";
 
 @Controller('roommate')
 export class RoommateController {
@@ -20,9 +22,16 @@ export class RoommateController {
     private userService: UserService
   ) {}
 
+  private readonly logger = new Logger(RoommateController.name);
+
   @Get()
-  async getAllPosts() {
-    const allPosts = await this.roommateService.findAll();
+  async getAllPosts(
+    @Param('page') page: number,
+    @Param('limit') limit: number
+  ) {
+    page = page || 0;
+    limit = limit || 50;
+    const allPosts = await this.roommateService.findAll(page, limit);
     return allPosts;
   }
 
@@ -49,6 +58,10 @@ export class RoommateController {
     if (!session.userId) return { success: false, msg: 'no_user_id' };
     const user = await this.userService.findUser(session.userId);
     if (!user) return { success: false, msg: 'user_not_exist' };
+    if (user.postCount >= config.maxPostCount) {
+      this.logger.log(`Create exceed max post count: userId ${user.userId}`)
+      return { success: false , msg: 'exceed_max_post_count' };
+    }
     const authorId = user.userId;
     const author = user.username;
     const postId = await this.roommateService.getCountAndIncrement();
@@ -66,6 +79,7 @@ export class RoommateController {
     }
     const params = Object.assign({}, createRoommateDto, otherParams);
     const post = await this.roommateService.create(params);
+    await this.userService.incrementPostCount(authorId);
     return { success: true, data: post };
   }
 }

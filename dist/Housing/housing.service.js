@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var HousingService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HousingService = void 0;
 const mongoose_1 = require("mongoose");
@@ -18,19 +19,25 @@ const common_1 = require("@nestjs/common");
 const mongoose_2 = require("@nestjs/mongoose");
 const housing_schema_1 = require("./schemas/housing.schema");
 const counter_schema_1 = require("./schemas/counter.schema");
-let HousingService = class HousingService {
+let HousingService = HousingService_1 = class HousingService {
     constructor(housingModel, counterModel) {
         this.housingModel = housingModel;
         this.counterModel = counterModel;
+        this.logger = new common_1.Logger(HousingService_1.name);
     }
     async create(params) {
+        this.logger.log(`Create post: postId ${params.postId} authorId ${params.authorId}`);
         const createdHousing = new this.housingModel(params);
         return createdHousing.save();
     }
-    async findAll() {
-        return this.housingModel.find().exec();
+    async findAll(page, limit) {
+        this.logger.log(`Find all posts: page ${page} limit ${limit}`);
+        return this.housingModel.find()
+            .sort({ createdTime: -1 })
+            .skip(page * limit).limit(limit).exec();
     }
     async getPostById(postId) {
+        this.logger.log(`Get specific post: postId ${postId}`);
         const post = await this.housingModel.findOne({ postId });
         return post;
     }
@@ -56,7 +63,8 @@ let HousingService = class HousingService {
             if (shd.other[otherName] === 1)
                 query[otherName] = 1;
         }
-        const posts = await this.housingModel.find(query);
+        this.logger.log(`Search posts: query ${JSON.stringify(query)}`);
+        const posts = await this.housingModel.find(query).sort({ createdTime: -1 });
         return posts;
     }
     async getCountAndIncrement() {
@@ -81,7 +89,7 @@ let HousingService = class HousingService {
         return `${year}-${this.toTwoDigit(month)}-${this.toTwoDigit(date)}`;
     }
 };
-HousingService = __decorate([
+HousingService = HousingService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_2.InjectModel)(housing_schema_1.Housing.name)),
     __param(1, (0, mongoose_2.InjectModel)(counter_schema_1.Counter.name)),

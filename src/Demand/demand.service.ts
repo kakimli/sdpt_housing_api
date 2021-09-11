@@ -1,5 +1,5 @@
 import { Model } from 'mongoose';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Demand, DemandDocument } from './schemas/demand.schema';
 import { Counter, CounterDocument } from '../Housing/schemas/counter.schema';
@@ -12,16 +12,23 @@ export class DemandService {
     @InjectModel(Counter.name) private counterModel: Model<CounterDocument>
   ) {}
 
+  private readonly logger = new Logger(DemandService.name);
+
   async create(params: any): Promise<Demand> {
+    this.logger.log(`Create post: postId ${params.postId} authorId ${params.authorId}`);
     const createdDemand = new this.demandModel(params);
     return createdDemand.save();
   }
 
-  async findAll(): Promise<Demand[]> {
-    return this.demandModel.find().exec();
+  async findAll(page: number, limit: number): Promise<Demand[]> {
+    this.logger.log(`Find all posts: page ${page} limit ${limit}`);
+    return this.demandModel.find()
+      .sort({ createdTime: -1 })
+      .skip(page * limit).limit(limit).exec();
   }
 
   async getPostById(postId: number): Promise<Demand> {
+    this.logger.log(`Get specific post: postId ${postId}`);
     const post = await this.demandModel.findOne({ postId });
     return post;
   }
@@ -29,6 +36,7 @@ export class DemandService {
   async searchPost(sdd: SearchDemandDto) {
     const query: {[index: string]: any} = {};
     if (sdd.title) query.title = new RegExp(sdd.title, 'i');
+    this.logger.log(`Search posts: query ${JSON.stringify(query)}`)
     const posts = await this.demandModel.find(query);
     return posts;
   }

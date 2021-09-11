@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var RoommateService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RoommateService = void 0;
 const mongoose_1 = require("mongoose");
@@ -18,19 +19,25 @@ const common_1 = require("@nestjs/common");
 const mongoose_2 = require("@nestjs/mongoose");
 const roommate_schema_1 = require("./schemas/roommate.schema");
 const counter_schema_1 = require("../Housing/schemas/counter.schema");
-let RoommateService = class RoommateService {
+let RoommateService = RoommateService_1 = class RoommateService {
     constructor(roommateModel, counterModel) {
         this.roommateModel = roommateModel;
         this.counterModel = counterModel;
+        this.logger = new common_1.Logger(RoommateService_1.name);
     }
     async create(params) {
+        this.logger.log(`Create post: postId ${params.postId} authorId ${params.authorId}`);
         const createdRoommate = new this.roommateModel(params);
         return createdRoommate.save();
     }
-    async findAll() {
-        return this.roommateModel.find().exec();
+    async findAll(page, limit) {
+        this.logger.log(`Find all posts: page ${page} limit ${limit}`);
+        return this.roommateModel.find()
+            .sort({ createdTime: -1 })
+            .skip(page * limit).limit(limit).exec();
     }
     async getPostById(postId) {
+        this.logger.log(`Get specific post: postId ${postId}`);
         const post = await this.roommateModel.findOne({ postId });
         return post;
     }
@@ -38,6 +45,7 @@ let RoommateService = class RoommateService {
         const query = {};
         if (sdd.title)
             query.title = new RegExp(sdd.title, 'i');
+        this.logger.log(`Search posts: query ${JSON.stringify(query)}`);
         const posts = await this.roommateModel.find(query);
         return posts;
     }
@@ -53,7 +61,7 @@ let RoommateService = class RoommateService {
         return roommateIdCounter.count;
     }
 };
-RoommateService = __decorate([
+RoommateService = RoommateService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, mongoose_2.InjectModel)(roommate_schema_1.Roommate.name)),
     __param(1, (0, mongoose_2.InjectModel)(counter_schema_1.Counter.name)),

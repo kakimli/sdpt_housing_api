@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var DemandController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DemandController = void 0;
 const common_1 = require("@nestjs/common");
@@ -19,13 +20,17 @@ const demand_service_1 = require("./demand.service");
 const common_2 = require("@nestjs/common");
 const search_demand_dto_1 = require("./dto/search-demand.dto");
 const user_service_1 = require("../User/user.service");
-let DemandController = class DemandController {
+const config_1 = require("../config");
+let DemandController = DemandController_1 = class DemandController {
     constructor(demandService, userService) {
         this.demandService = demandService;
         this.userService = userService;
+        this.logger = new common_1.Logger(DemandController_1.name);
     }
-    async getAllPosts() {
-        const allPosts = await this.demandService.findAll();
+    async getAllPosts(page, limit) {
+        page = page || 0;
+        limit = limit || 50;
+        const allPosts = await this.demandService.findAll(page, limit);
         return allPosts;
     }
     async searchPosts(searchDemandDto) {
@@ -44,6 +49,10 @@ let DemandController = class DemandController {
         const user = await this.userService.findUser(session.userId);
         if (!user)
             return { success: false, msg: 'user_not_exist' };
+        if (user.postCount >= config_1.default.maxPostCount) {
+            this.logger.log(`Create exceed max post count: userId ${user.userId}`);
+            return { success: false, msg: 'exceed_max_post_count' };
+        }
         const authorId = user.userId;
         const author = user.username;
         const postId = await this.demandService.getCountAndIncrement();
@@ -61,13 +70,16 @@ let DemandController = class DemandController {
         };
         const params = Object.assign({}, createDemandDto, otherParams);
         const post = await this.demandService.create(params);
+        await this.userService.incrementPostCount(authorId);
         return { success: true, data: post };
     }
 };
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Param)('page')),
+    __param(1, (0, common_1.Param)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", Promise)
 ], DemandController.prototype, "getAllPosts", null);
 __decorate([
@@ -94,7 +106,7 @@ __decorate([
     __metadata("design:paramtypes", [create_demand_dto_1.CreateDemandDto, Object]),
     __metadata("design:returntype", Promise)
 ], DemandController.prototype, "createPost", null);
-DemandController = __decorate([
+DemandController = DemandController_1 = __decorate([
     (0, common_1.Controller)('demand'),
     __metadata("design:paramtypes", [demand_service_1.DemandService,
         user_service_1.UserService])

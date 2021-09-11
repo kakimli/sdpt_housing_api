@@ -6,7 +6,8 @@ export declare class RoommateController {
     private roommateService;
     private userService;
     constructor(roommateService: RoommateService, userService: UserService);
-    getAllPosts(): Promise<import("./schemas/roommate.schema").Roommate[]>;
+    private readonly logger;
+    getAllPosts(page: number, limit: number): Promise<import("./schemas/roommate.schema").Roommate[]>;
     searchPosts(searchRoommateDto: SearchRoommateDto): Promise<import("./schemas/roommate.schema").RoommateDocument[]>;
     getPostById(id: number): Promise<{
         success: boolean;

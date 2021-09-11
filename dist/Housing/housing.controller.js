@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var HousingController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HousingController = void 0;
 const common_1 = require("@nestjs/common");
@@ -22,29 +23,40 @@ const user_service_1 = require("../User/user.service");
 const platform_express_1 = require("@nestjs/platform-express");
 const fs_1 = require("fs");
 const path_1 = require("path");
-let HousingController = class HousingController {
+const config_1 = require("../config");
+let HousingController = HousingController_1 = class HousingController {
     constructor(housingService, userService) {
         this.housingService = housingService;
         this.userService = userService;
+        this.logger = new common_1.Logger(HousingController_1.name);
     }
-    async getAllPosts() {
-        const allPosts = await this.housingService.findAll();
+    async getAllPosts(page, limit) {
+        page = page || 0;
+        limit = limit || 50;
+        const allPosts = await this.housingService.findAll(page, limit);
         return allPosts;
     }
     async searchPosts(searchHousingDto) {
-        console.log('searchHousingDto:', searchHousingDto);
         const posts = await this.housingService.searchPost(searchHousingDto);
         return posts;
     }
-    async uploadFile(file) {
-        console.log('/upload');
-        console.log(file);
+    async uploadFile(file, session) {
         try {
+            if (!session.userId && session.userId !== 0) {
+                return { success: false, msg: 'no_user_id' };
+            }
+            const user = await this.userService.findUser(session.userId);
+            if (!user)
+                return { success: false, msg: 'user_not_exist' };
+            if (user.postCount >= config_1.default.maxPostCount) {
+                this.logger.log(`Upload exceed max post count: userId ${user.userId}`);
+                return { success: false, msg: 'exceed_max_post_count' };
+            }
             const dateString = this.housingService.getDateString();
             const filename = `${dateString}-${file.originalname}`;
             const writeImage = (0, fs_1.createWriteStream)((0, path_1.join)(__dirname, '..', '../public/upload', `${filename}`));
             await writeImage.write(file.buffer);
-            console.log('dest', (0, path_1.join)(__dirname, '..', '../public/upload', `${filename}`));
+            this.logger.log(`Upload ${(0, path_1.join)(__dirname, '..', '../public/upload', `${filename}`)}`);
             return { success: true, data: filename };
         }
         catch (e) {
@@ -58,12 +70,15 @@ let HousingController = class HousingController {
         return { success: true, data: post };
     }
     async createPost(createHousingDto, session) {
-        console.log('createHousingDto:', createHousingDto);
         if (!session.userId)
             return { success: false, msg: 'no_user_id' };
         const user = await this.userService.findUser(session.userId);
         if (!user)
             return { success: false, msg: 'user_not_exist' };
+        if (user.postCount >= config_1.default.maxPostCount) {
+            this.logger.log(`Create exceed max post count: userId ${user.userId}`);
+            return { success: false, msg: 'exceed_max_post_count' };
+        }
         const authorId = user.userId;
         const author = user.username;
         const postId = await this.housingService.getCountAndIncrement();
@@ -82,13 +97,16 @@ let HousingController = class HousingController {
         };
         const params = Object.assign({}, createHousingDto, otherParams, createHousingDto.utilities, createHousingDto.other);
         const post = await this.housingService.create(params);
+        await this.userService.incrementPostCount(authorId);
         return { success: true, data: post };
     }
 };
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Param)('page')),
+    __param(1, (0, common_1.Param)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", Promise)
 ], HousingController.prototype, "getAllPosts", null);
 __decorate([
@@ -103,8 +121,9 @@ __decorate([
     (0, common_1.Post)('/upload'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
     __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, common_1.Session)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], HousingController.prototype, "uploadFile", null);
 __decorate([
@@ -123,7 +142,7 @@ __decorate([
     __metadata("design:paramtypes", [create_housing_dto_1.CreateHousingDto, Object]),
     __metadata("design:returntype", Promise)
 ], HousingController.prototype, "createPost", null);
-HousingController = __decorate([
+HousingController = HousingController_1 = __decorate([
     (0, common_1.Controller)('housing'),
     __metadata("design:paramtypes", [housing_service_1.HousingService,
         user_service_1.UserService])

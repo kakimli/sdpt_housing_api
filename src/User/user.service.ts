@@ -1,5 +1,5 @@
 import { Model } from 'mongoose';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import { LoginDto } from './dto/login.dto';
@@ -14,6 +14,8 @@ export class UserService {
     @InjectModel(Counter.name) private counterModel: Model<CounterDocument>,
     private httpService: HttpService
   ) {}
+
+  private readonly logger = new Logger(UserService.name);
 
   async requestForOpenId (loginDto: LoginDto) {
     const api = `https://api.weixin.qq.com/sns/jscode2session`;
@@ -43,9 +45,11 @@ export class UserService {
       const createdUser = new this.userModel({ 
         userId,
         openId, 
-        username
+        username,
+        postCount: 0
       });
       createdUser.save();
+      this.logger.log(`Create account: userId ${userId} openId ${openId}`);
       return userId;
     }
     return user.userId;
@@ -54,6 +58,10 @@ export class UserService {
   async findUser (userId: number) {
     const user = await this.userModel.findOne({ userId }).lean();
     return user;
+  }
+
+  async incrementPostCount (userId: number) {
+    await this.userModel.findOneAndUpdate({ userId }, { $inc: { postCount: 1 }});
   }
   
 }

@@ -5,13 +5,15 @@ import {
   Param, 
   Post,
   UsePipes,
-  Session
+  Session,
+  Logger
 } from "@nestjs/common";
 import { CreateDemandDto } from "./dto/create-demand.dto";
 import { DemandService } from "./demand.service";
 import { ValidationPipe } from '@nestjs/common';
 import { SearchDemandDto } from "./dto/search-demand.dto";
 import { UserService } from "src/User/user.service";
+import config from "src/config";
 
 @Controller('demand')
 export class DemandController {
@@ -20,9 +22,16 @@ export class DemandController {
     private userService: UserService
   ) {}
 
+  private readonly logger = new Logger(DemandController.name);
+
   @Get()
-  async getAllPosts() {
-    const allPosts = await this.demandService.findAll();
+  async getAllPosts(
+    @Param('page') page: number,
+    @Param('limit') limit: number
+  ) {
+    page = page || 0;
+    limit = limit || 50;
+    const allPosts = await this.demandService.findAll(page, limit);
     return allPosts;
   }
 
@@ -49,6 +58,10 @@ export class DemandController {
     if (!session.userId) return { success: false, msg: 'no_user_id' };
     const user = await this.userService.findUser(session.userId);
     if (!user) return { success: false, msg: 'user_not_exist' };
+    if (user.postCount >= config.maxPostCount) {
+      this.logger.log(`Create exceed max post count: userId ${user.userId}`)
+      return { success: false , msg: 'exceed_max_post_count' };
+    }
     const authorId = user.userId;
     const author = user.username;
     const postId = await this.demandService.getCountAndIncrement();
@@ -66,6 +79,7 @@ export class DemandController {
     }
     const params = Object.assign({}, createDemandDto, otherParams);
     const post = await this.demandService.create(params);
+    await this.userService.incrementPostCount(authorId);
     return { success: true, data: post };
   }
 }

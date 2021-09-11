@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Post, Session } from '@nestjs/common';
+import { 
+  Body, 
+  Controller, 
+  Get, 
+  Post, 
+  Session,
+  Logger
+} from '@nestjs/common';
 import { LoginDto } from './dto/login.dto';
 import { UserService } from './user.service';
 
@@ -7,6 +14,8 @@ export class UserController {
   constructor(
     private userService: UserService
   ) {}
+
+  private readonly logger = new Logger(UserController.name);
 
   @Post('login')
   async login(
@@ -20,6 +29,7 @@ export class UserController {
       const username = loginDto.username;
       const userId = await this.userService.createUserIfNotExist(openId, username);
       session.userId = userId;
+      this.logger.log(`Login: userId ${userId}`);
       return userId;
     } catch (e) {
       return { success: false, msg: e.toString() };
@@ -29,12 +39,11 @@ export class UserController {
   @Get('checkLoginState')
   async checkLoginState(@Session() session: Record<string, any>) {
     try {
-      console.log('checkLoginState:', session)
       const userId = session.userId;
-      console.log('session.userId', session.userId);
-      if (!userId) return { success: false, msg: 'not_userId' };
+      if (!userId) return { success: false, msg: 'no_userId' };
       const user = this.userService.findUser(userId);
       if (!user) return { success: false, msg: 'user_not_exist' };
+      this.logger.log(`Check login state: userId ${userId}`)
       return { success: true, data: {} };
     } catch (e) {
       return { success: false, msg: e.toString() };

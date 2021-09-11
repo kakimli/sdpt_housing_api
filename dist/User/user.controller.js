@@ -11,14 +11,16 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var UserController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserController = void 0;
 const common_1 = require("@nestjs/common");
 const login_dto_1 = require("./dto/login.dto");
 const user_service_1 = require("./user.service");
-let UserController = class UserController {
+let UserController = UserController_1 = class UserController {
     constructor(userService) {
         this.userService = userService;
+        this.logger = new common_1.Logger(UserController_1.name);
     }
     async login(loginDto, session) {
         try {
@@ -29,6 +31,7 @@ let UserController = class UserController {
             const username = loginDto.username;
             const userId = await this.userService.createUserIfNotExist(openId, username);
             session.userId = userId;
+            this.logger.log(`Login: userId ${userId}`);
             return userId;
         }
         catch (e) {
@@ -37,14 +40,13 @@ let UserController = class UserController {
     }
     async checkLoginState(session) {
         try {
-            console.log('checkLoginState:', session);
             const userId = session.userId;
-            console.log('session.userId', session.userId);
             if (!userId)
-                return { success: false, msg: 'not_userId' };
+                return { success: false, msg: 'no_userId' };
             const user = this.userService.findUser(userId);
             if (!user)
                 return { success: false, msg: 'user_not_exist' };
+            this.logger.log(`Check login state: userId ${userId}`);
             return { success: true, data: {} };
         }
         catch (e) {
@@ -67,7 +69,7 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UserController.prototype, "checkLoginState", null);
-UserController = __decorate([
+UserController = UserController_1 = __decorate([
     (0, common_1.Controller)('user'),
     __metadata("design:paramtypes", [user_service_1.UserService])
 ], UserController);

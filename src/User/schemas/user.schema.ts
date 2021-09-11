@@ -11,6 +11,8 @@ export class User {
   openId: string;
   @Prop()
   username: string;
+  @Prop()
+  postCount: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
